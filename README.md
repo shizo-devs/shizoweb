@@ -1,3 +1,11 @@
+# ShizoWeb is another version of Baileys that was originally created by Adhiraj Singh. ShizoWeb is Maintained and Up-to-dated with all lestest feature [Thanks for visiting here]
+
+## Our Team Members [shizoweb maintainer]
+**• Shizo The Techie**
+**• Guru Sensei**
+**• DGXeon**
+**• Kai**
+
 # Baileys - Typescript/Javascript WhatsApp Web API
 
 ### Important Note
