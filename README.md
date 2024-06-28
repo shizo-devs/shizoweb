@@ -10,7 +10,7 @@
 
 **• Kai**
 
-# Baileys - Typescript/Javascript WhatsApp Web API
+# Shizoweb - Typescript/Javascript WhatsApp Web API
 
 ### Important Note
 
