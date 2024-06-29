@@ -24,6 +24,11 @@ export const Browsers = {
 	appropriate: browser => [ PLATFORM_MAP[platform()] || 'Ubuntu', browser, release() ] as [string, string, string]
 }
 
+/** Other Browser Support for Paircode */
+export const getPlatformId = (browser: string) => {
+	const platformType = proto.DeviceProps.PlatformType[browser.toUpperCase()]
+	return platformType ? platformType.toString().charCodeAt(0) : '49' //chrome
+}
 export const BufferJSON = {
 	replacer: (k, value: any) => {
 		if(Buffer.isBuffer(value) || value instanceof Uint8Array || value?.type === 'Buffer') {
