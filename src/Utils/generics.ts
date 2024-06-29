@@ -8,11 +8,15 @@ import { version as baileysVersion } from '../Defaults/baileys-version.json'
 import { BaileysEventEmitter, BaileysEventMap, DisconnectReason, WACallUpdateType, WAVersion } from '../Types'
 import { BinaryNode, getAllBinaryNodeChildren, jidDecode } from '../WABinary'
 
+/** Added Extra Browsers or Platforms*/
 const PLATFORM_MAP = {
 	'aix': 'AIX',
 	'darwin': 'Mac OS',
 	'win32': 'Windows',
-	'android': 'Android'
+	'android': 'Android',
+	'freebsd': 'FreeBSD',
+	'openbsd': 'OpenBSD',
+	'sunos': 'Solaris'
 }
 
 export const Browsers = {
