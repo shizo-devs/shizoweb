@@ -1,4 +1,4 @@
-name: Check PR health
+name: PR healthier
 
 on: [pull_request]
 
