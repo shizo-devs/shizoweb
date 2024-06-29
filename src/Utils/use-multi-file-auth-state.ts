@@ -1,17 +1,9 @@
-import AsyncLock from 'async-lock'
 import { mkdir, readFile, stat, unlink, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { proto } from '../../WAProto'
 import { AuthenticationCreds, AuthenticationState, SignalDataTypeMap } from '../Types'
 import { initAuthCreds } from './auth-utils'
 import { BufferJSON } from './generics'
-
-// We need to lock files due to the fact that we are using async functions to read and write files
-// https://github.com/WhiskeySockets/Baileys/issues/794
-// https://github.com/nodejs/node/issues/26338
-// Default pending is 1000, set it to infinity
-// https://github.com/rogierschouten/async-lock/issues/63
-const fileLock = new AsyncLock({ maxPending: Infinity })
 
 /**
  * stores the full authentication state in a single folder.
@@ -23,20 +15,12 @@ const fileLock = new AsyncLock({ maxPending: Infinity })
 export const useMultiFileAuthState = async(folder: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
 
 	const writeData = (data: any, file: string) => {
-		const filePath = join(folder, fixFileName(file)!)
-		return fileLock.acquire(
-			filePath,
-			() => writeFile(join(filePath), JSON.stringify(data, BufferJSON.replacer))
-		)
+		return writeFile(join(folder, fixFileName(file)!), JSON.stringify(data, BufferJSON.replacer))
 	}
 
 	const readData = async(file: string) => {
 		try {
-			const filePath = join(folder, fixFileName(file)!)
-			const data = await fileLock.acquire(
-				filePath,
-				() => readFile(filePath, { encoding: 'utf-8' })
-			)
+			const data = await readFile(join(folder, fixFileName(file)!), { encoding: 'utf-8' })
 			return JSON.parse(data, BufferJSON.reviver)
 		} catch(error) {
 			return null
@@ -45,11 +29,7 @@ export const useMultiFileAuthState = async(folder: string): Promise<{ state: Aut
 
 	const removeData = async(file: string) => {
 		try {
-			const filePath = join(folder, fixFileName(file)!)
-			await fileLock.acquire(
-				filePath,
-				() => unlink(filePath)
-			)
+			await unlink(join(folder, fixFileName(file)!))
 		} catch{
 
 		}

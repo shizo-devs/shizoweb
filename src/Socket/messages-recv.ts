@@ -32,7 +32,7 @@ import {
 	getBinaryNodeChild,
 	getBinaryNodeChildBuffer,
 	getBinaryNodeChildren,
-	isJidGroup, isJidStatusBroadcast,
+	isJidGroup,
 	isJidUser,
 	jidDecode,
 	jidNormalizedUser,
@@ -240,7 +240,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		child: BinaryNode,
 		msg: Partial<proto.IWebMessageInfo>
 	) => {
-		const participantJid = getBinaryNodeChild(child, 'participant')?.attrs?.jid || participant
 		switch (child?.tag) {
 		case 'create':
 			const metadata = extractGroupMetadata(child)
@@ -321,18 +320,25 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				msg.messageStubType = WAMessageStubType.GROUP_MEMBERSHIP_JOIN_APPROVAL_MODE
 				msg.messageStubParameters = [ approvalMode.attrs.state ]
 			}
+
+			break
+		}
+	}
+
 	const handleNewsletterNotification = (id: string, node: BinaryNode) => {
         const messages = getBinaryNodeChild(node, 'messages')
-	const message = getBinaryNodeChild(messages, 'message')!
-	const server_id = message.attrs.server_id
-	const reactionsList = getBinaryNodeChild(message, 'reactions')
-	const viewsList = getBinaryNodeChildren(message, 'views_count')
+        const message = getBinaryNodeChild(messages, 'message')!
+
+        const server_id = message.attrs.server_id
+
+        const reactionsList = getBinaryNodeChild(message, 'reactions')
+		const viewsList = getBinaryNodeChildren(message, 'views_count')
 
         if(reactionsList){
-	const reactions = getBinaryNodeChildren(reactionsList, 'reaction')
+			const reactions = getBinaryNodeChildren(reactionsList, 'reaction')
 			if(reactions.length === 0){
-			ev.emit('newsletter.reaction', {id, server_id, reaction: { removed: true }})
-				}
+				ev.emit('newsletter.reaction', {id, server_id, reaction: { removed: true }})
+			}
 			reactions.forEach(item => {
 				ev.emit('newsletter.reaction', {id, server_id, reaction: { code: item.attrs?.code, count: +item.attrs?.count }})
 			})
@@ -357,7 +363,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				action = 'promote'
 				contentPath = content.data[XWAPaths.PROMOTE]
 			}
-
+	
 			if(operation === MexOperations.DEMOTE){
 				action = 'demote'
 				contentPath = content.data[XWAPaths.DEMOTE]
@@ -369,19 +375,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		if(operation === MexOperations.UPDATE){
 			contentPath = content.data[XWAPaths.METADATA_UPDATE]
 			ev.emit('newsletter-settings.update', {id, update: contentPath.thread_metadata.settings as NewsletterSettingsUpdate})
-		}
-	}
-
-			break
-		case 'created_membership_requests':
-			msg.messageStubType = WAMessageStubType.GROUP_MEMBERSHIP_JOIN_APPROVAL_REQUEST_NON_ADMIN_ADD
-			msg.messageStubParameters = [ participantJid, 'created', child.attrs.request_method ]
-			break
-		case 'revoked_membership_requests':
-			const isDenied = areJidsSameUser(participantJid, participant)
-			msg.messageStubType = WAMessageStubType.GROUP_MEMBERSHIP_JOIN_APPROVAL_REQUEST_NON_ADMIN_ADD
-			msg.messageStubParameters = [ participantJid, isDenied ? 'revoked' : 'rejected' ]
-			break
 		}
 	}
 
@@ -406,13 +399,13 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				logger.debug({ jid }, 'got privacy token update')
 			}
 
-		break
+			break
 		case 'newsletter':
 			handleNewsletterNotification(node.attrs.from, child)
 		break
 		case 'mex':
 			handleMexNewsletterNotification(node.attrs.from, child)
-		     break
+			break
 		case 'w:gp2':
 			handleGroupNotification(node.attrs.participant, child, result)
 			break
@@ -640,7 +633,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			participant: attrs.participant
 		}
 
-		if(shouldIgnoreJid(remoteJid) && remoteJid !== '@s.whatsapp.net') {
+		if(shouldIgnoreJid(remoteJid)) {
 			logger.debug({ remoteJid }, 'ignoring receipt from jid')
 			await sendMessageAck(node)
 			return
@@ -665,7 +658,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 							!isNodeFromMe
 						)
 					) {
-						if(isJidGroup(remoteJid) || isJidStatusBroadcast(remoteJid)) {
+						if(isJidGroup(remoteJid)) {
 							if(attrs.participant) {
 								const updateKey: keyof MessageUserReceipt = status === proto.WebMessageInfo.Status.DELIVERY_ACK ? 'receiptTimestamp' : 'readTimestamp'
 								ev.emit(
@@ -717,7 +710,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 	const handleNotification = async(node: BinaryNode) => {
 		const remoteJid = node.attrs.from
-		if(shouldIgnoreJid(remoteJid) && remoteJid !== '@s.whatsapp.net') {
+		if(shouldIgnoreJid(remoteJid)) {
 			logger.debug({ remoteJid, id: node.attrs.id }, 'ignored notification')
 			await sendMessageAck(node)
 			return
@@ -749,12 +742,6 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	}
 
 	const handleMessage = async(node: BinaryNode) => {
-		if(shouldIgnoreJid(node.attrs.from!) && node.attrs.from! !== '@s.whatsapp.net') {
-			logger.debug({ key: node.attrs.key }, 'ignored message')
-			await sendMessageAck(node)
-			return
-		}
-
 		const { fullMessage: msg, category, author, decrypt } = decryptMessageNode(
 			node,
 			authState.creds.me!.id,
@@ -767,6 +754,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			if(node.attrs.sender_pn) {
 				ev.emit('chats.phoneNumberShare', { lid: node.attrs.from, jid: node.attrs.sender_pn })
 			}
+		}
+
+		if(shouldIgnoreJid(msg.key.remoteJid!)) {
+			logger.debug({ key: msg.key }, 'ignored message')
+			await sendMessageAck(node)
+			return
 		}
 
 		await Promise.all([

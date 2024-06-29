@@ -3,7 +3,6 @@ import axios from 'axios'
 import { randomBytes } from 'crypto'
 import { promises as fs } from 'fs'
 import { Logger } from 'pino'
-import { type Transform } from 'stream'
 import { proto } from '../../WAProto'
 import { MEDIA_KEYS, URL_REGEX, WA_DEFAULT_EPHEMERAL } from '../Defaults'
 import {
@@ -413,12 +412,6 @@ export const generateWAMessageContent = async(
 			}
 			break
 		}
-	} else if('ptv' in message && message.ptv) {
-		const { videoMessage } = await prepareWAMessageMedia(
-			{ video: message.video },
-			options
-		)
-		m.ptvMessage = videoMessage
 	} else if('product' in message) {
 		const { imageMessage } = await prepareWAMessageMedia(
 			{ image: message.product.productImage },
@@ -878,31 +871,31 @@ const REUPLOAD_REQUIRED_STATUS = [410, 404]
 /**
  * Downloads the given message. Throws an error if it's not a media message
  */
-export const downloadMediaMessage = async<Type extends 'buffer' | 'stream'>(
+export const downloadMediaMessage = async(
 	message: WAMessage,
-	type: Type,
+	type: 'buffer' | 'stream',
 	options: MediaDownloadOptions,
 	ctx?: DownloadMediaMessageContext
 ) => {
-	const result = await downloadMsg()
-		.catch(async(error) => {
-			if(ctx) {
-				if(axios.isAxiosError(error)) {
-					// check if the message requires a reupload
-					if(REUPLOAD_REQUIRED_STATUS.includes(error.response?.status!)) {
-						ctx.logger.info({ key: message.key }, 'sending reupload media request...')
-						// request reupload
-						message = await ctx.reuploadRequest(message)
-						const result = await downloadMsg()
-						return result
-					}
+	try {
+		const result = await downloadMsg()
+		return result
+	} catch(error) {
+		if(ctx) {
+			if(axios.isAxiosError(error)) {
+				// check if the message requires a reupload
+				if(REUPLOAD_REQUIRED_STATUS.includes(error.response?.status!)) {
+					ctx.logger.info({ key: message.key }, 'sending reupload media request...')
+					// request reupload
+					message = await ctx.reuploadRequest(message)
+					const result = await downloadMsg()
+					return result
 				}
 			}
+		}
 
-			throw error
-		})
-
-	return result as Type extends 'buffer' ? Buffer : Transform
+		throw error
+	}
 
 	async function downloadMsg() {
 		const mContent = extractMessageContent(message.message)

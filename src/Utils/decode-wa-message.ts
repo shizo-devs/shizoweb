@@ -88,7 +88,7 @@ export function decodeMessageNode(
 
 	const fromMe = isJidNewsletter(from) ? !!stanza.attrs?.is_sender || false : (isLidUser(from) ? isMeLid : isMe)(stanza.attrs.participant || stanza.attrs.from)
 	const pushname = stanza?.attrs?.notify
-	
+
 	const key: WAMessageKey = {
 		remoteJid: chatId,
 		fromMe,
@@ -138,7 +138,7 @@ export const decryptMessageNode = (
 					}
 
 					if(tag !== 'enc' && tag !== 'plaintext') {
-					continue
+						continue
 					}
 
 					if(!(content instanceof Uint8Array)) {
@@ -174,17 +174,19 @@ export const decryptMessageNode = (
 						default:
 							throw new Error(`Unknown e2e type: ${e2eType}`)
 						}
+
 						let msg: proto.IMessage = proto.Message.decode(tag === 'plaintext' ? msgBuffer : unpadRandomMax16(msgBuffer))
 						msg = msg?.deviceSentMessage?.message || msg
+
 						if(msg.senderKeyDistributionMessage) {
-						    try {
+							try {
 								await repository.processSenderKeyDistributionMessage({
 									authorJid: author,
 									item: msg.senderKeyDistributionMessage
 								})
 							} catch(err) {
 								logger.error({ key: fullMessage.key, err }, 'failed to decrypt message')
-						        }
+								}
 						}
 
 						if(fullMessage.message) {

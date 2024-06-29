@@ -289,4 +289,4 @@ export const extractNewsletterMetadata = (node: BinaryNode, isCreate?: boolean) 
     }
 
     return metadata
-      }
+}
