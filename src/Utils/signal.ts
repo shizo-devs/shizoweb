@@ -1,3 +1,4 @@
+import { chunk } from 'lodash'
 import { KEY_BUNDLE_TYPE } from '../Defaults'
 import { SignalRepository } from '../Types'
 import { AuthenticationCreds, AuthenticationState, KeyPair, SignalIdentity, SignalKeyStore, SignedKeyPair } from '../Types/Auth'
@@ -81,27 +82,31 @@ export const parseAndInjectE2ESessions = async(
 		assertNodeErrorFree(node)
 	}
 
-	await Promise.all(
-		nodes.map(
-			async node => {
-				const signedKey = getBinaryNodeChild(node, 'skey')!
-				const key = getBinaryNodeChild(node, 'key')!
-				const identity = getBinaryNodeChildBuffer(node, 'identity')!
-				const jid = node.attrs.jid
-				const registrationId = getBinaryNodeChildUInt(node, 'registration', 4)
+	const chunkSize = 100
+	const chunks = chunk(nodes, chunkSize)
+	for(const nodesChunk of chunks) {
+		await Promise.all(
+			nodesChunk.map(
+				async node => {
+					const signedKey = getBinaryNodeChild(node, 'skey')!
+					const key = getBinaryNodeChild(node, 'key')!
+					const identity = getBinaryNodeChildBuffer(node, 'identity')!
+					const jid = node.attrs.jid
+					const registrationId = getBinaryNodeChildUInt(node, 'registration', 4)
 
-				await repository.injectE2ESession({
-					jid,
-					session: {
-						registrationId: registrationId!,
-						identityKey: generateSignalPubKey(identity),
-						signedPreKey: extractKey(signedKey)!,
-						preKey: extractKey(key)!
-					}
-				})
-			}
+					await repository.injectE2ESession({
+						jid,
+						session: {
+							registrationId: registrationId!,
+							identityKey: generateSignalPubKey(identity),
+							signedPreKey: extractKey(signedKey)!,
+							preKey: extractKey(key)!
+						}
+					})
+				}
+			)
 		)
-	)
+	}
 }
 
 export const extractDeviceJids = (result: BinaryNode, myJid: string, excludeZeroDevices: boolean) => {
