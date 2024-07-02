@@ -17,4 +17,9 @@ jobs:
 
     - name: Install packages
       run: yarn
-  
+
+    - name: Run Tests
+      run: yarn test
+
+    - name: Run Code Formatter (optional)
+      run: yarn format:check
