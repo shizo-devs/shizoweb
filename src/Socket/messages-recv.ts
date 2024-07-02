@@ -367,6 +367,9 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		case 'encrypt':
 			await handleEncryptNotification(node)
 			break
+		case 'newsletter':
+			// TO DO
+			break
 		case 'devices':
 			const devices = getBinaryNodeChildren(child, 'device')
 			if(areJidsSameUser(child.attrs.jid, authState.creds.me!.id)) {
