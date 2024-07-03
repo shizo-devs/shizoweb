@@ -183,14 +183,14 @@ export async function promiseTimeout<T>(ms: number | undefined, promise: (resolv
 // https://github.com/tulir/whatsmeow/blob/64bc969fbe78d31ae0dd443b8d4c80a5d026d07a/send.go#L42
 export const generateMessageIDV2 = (userId?: string): string => {
   const data = Buffer.alloc(8 + 20 + 16)
-  data.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000)))
+	data.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000)))
 
-  if (userId) {
-	const id = jidDecode(userId)
-	if (id?.user) {
-		data.write(id.user, 8)
-		data.write('@c.us', 8 + id.user.length)
-	}
+	if (userId) {
+		const id = jidDecode(userId)
+		if (id?.user) {
+			data.write(id.user, 8)
+			data.write('@c.us', 8 + id.user.length)
+		}
   }
 
   const random = randomBytes(16)
