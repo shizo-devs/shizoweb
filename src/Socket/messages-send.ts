@@ -4,10 +4,10 @@ import NodeCache from 'node-cache'
 import { proto } from '../../WAProto'
 import { DEFAULT_CACHE_TTLS, WA_DEFAULT_EPHEMERAL } from '../Defaults'
 import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, SocketConfig, WAMediaUploadFunctionOpts, WAMessageKey } from '../Types'
-import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, parseAndInjectE2ESessions, unixTimestampSeconds } from '../Utils'
+import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, encodeNewsletterMessage, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, parseAndInjectE2ESessions, unixTimestampSeconds } from '../Utils'
 import { getUrlInfo } from '../Utils/link-preview'
-import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, isJidNewsLetter, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
-import { makeNewsLetterSocket } from './newsletter'
+import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, isJidNewsletter, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
+import { makeNewsletterSocket } from './newsletter'
 import ListType = proto.Message.ListMessage.ListType;
 import { Readable } from 'stream'
 
@@ -19,7 +19,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		options: axiosOptions,
 		patchMessageBeforeSending,
 	} = config
-	const sock = makeNewsLetterSocket(config)
+	const sock = makeNewsletterSocket(config)
 	const {
 		ev,
 		authState,
@@ -100,7 +100,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		if(type) {
-			node.attrs.type = isJidNewsLetter(jid) ? 'read-self' : type
+			node.attrs.type = isJidNewsletter(jid) ? 'read-self' : type
 		}
 
 		const remainingMessageIds = messageIds.slice(1)
@@ -161,6 +161,10 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			}
 		}
 
+		if(!users.length) {
+			return deviceResults
+		}
+		
 		const iq: BinaryNode = {
 			tag: 'iq',
 			attrs: {
@@ -429,27 +433,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					})
 
 					await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
-					} else if (isNewsletter) {
-					// Message edit
-					if (message.protocolMessage?.editedMessage) {
-						msgId = message.protocolMessage.key?.id!
-						message = message.protocolMessage.editedMessage
-					}
-
-					// Message delete
-					if (message.protocolMessage?.type === proto.Message.ProtocolMessage.Type.REVOKE) {
-						msgId = message.protocolMessage.key?.id!
-						message = {}
-					}
-
+					} else if(isNewsletter){
 					const patched = await patchMessageBeforeSending(message, [])
-					const bytes = proto.Message.encode(patched).finish()
+					const bytes = encodeNewsletterMessage(patched)
 
 					binaryNodeContent.push({
 						tag: 'plaintext',
-						attrs: mediaType ? { mediatype: mediaType } : {},
+						attrs: {},
 						content: bytes
-					})
+					}) 
 				} else {
 					const { user: meUser, device: meDevice } = jidDecode(meId)!
 
@@ -784,7 +776,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							},
 						),
 						upload: async(readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
-							const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewsLetter(jid) })
+							const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewsletter(jid) })
 							mediaHandle = up.handle
 							return up
 						},
@@ -800,13 +792,13 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				// required for delete
 				if(isDeleteMsg) {
 					// if the chat is a group, and I am not the author, then delete the message as an admin
-					if((isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) || isJidNewsLetter(jid)) {
+					if((isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) || isJidNewsletter(jid)) {
 						additionalAttributes.edit = '8'
 					} else {
 						additionalAttributes.edit = '7'
 					}
 				} else if(isEditMsg) {
-					additionalAttributes.edit = isJidNewsLetter(jid) ? '3' : '1'
+					additionalAttributes.edit = isJidNewsletter(jid) ? '3' : '1'
 				}
 
 				if (mediaHandle) {

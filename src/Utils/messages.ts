@@ -24,7 +24,7 @@ import {
 	WAProto,
 	WATextMessage,
 } from '../Types'
-import { isJidGroup, isJidNewsLetter, isJidStatusBroadcast, jidNormalizedUser } from '../WABinary'
+import { isJidGroup, isJidNewsletter, isJidStatusBroadcast, jidNormalizedUser } from '../WABinary'
 import { sha256 } from './crypto'
 import { generateMessageID, getKeyAuthor, unixTimestampSeconds } from './generics'
 import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, MediaDownloadOptions, prepareStream } from './messages-media'
@@ -603,7 +603,7 @@ export const generateWAMessageFromContent = (
 	const timestamp = unixTimestampSeconds(options.timestamp)
 	const { quoted, userJid } = options
 
-	if(quoted) {
+	if(quoted && !isJidNewsletter(jid)) {
 		const participant = quoted.key.fromMe ? userJid : (quoted.participant || quoted.key.participant || quoted.key.remoteJid)
 
 		let quotedMsg = normalizeMessageContent(quoted.message)!
@@ -636,7 +636,9 @@ export const generateWAMessageFromContent = (
 		// and it's not a protocol message -- delete, toggle disappear message
 		key !== 'protocolMessage' &&
 		// already not converted to disappearing message
-		key !== 'ephemeralMessage'
+		key !== 'ephemeralMessage' &&
+		// newsletter not accept disappearing messages
+		!isJidNewsletter(jid)
 	) {
 		innerMessage[key].contextInfo = {
 			...(innerMessage[key].contextInfo || {}),
@@ -673,7 +675,7 @@ export const generateWAMessage = async(
 		jid,
 		await generateWAMessageContent(
 			content,
-			{ newsletter: isJidNewsLetter(jid!), ...options }
+			{ newsletter: isJidNewsletter(jid!), ...options }
 		),
 		options
 	)
