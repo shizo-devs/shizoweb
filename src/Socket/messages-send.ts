@@ -6,8 +6,8 @@ import { DEFAULT_CACHE_TTLS, WA_DEFAULT_EPHEMERAL } from '../Defaults'
 import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, SocketConfig, WAMediaUploadFunctionOpts, WAMessageKey } from '../Types'
 import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, parseAndInjectE2ESessions, unixTimestampSeconds } from '../Utils'
 import { getUrlInfo } from '../Utils/link-preview'
-import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, encodeNewsletterMessage, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, isJidNewsLetter, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
-import { makeNewsLetterSocket } from './newsletter'
+import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, encodeNewsletterMessage, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, isJidNewsletter, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
+import { makeNewsletterSocket } from './newsletter'
 import ListType = proto.Message.ListMessage.ListType;
 import { Readable } from 'stream'
 
@@ -19,7 +19,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		options: axiosOptions,
 		patchMessageBeforeSending,
 	} = config
-	const sock = makeNewsLetterSocket(config)
+	const sock = makeNewsletterSocket(config)
 	const {
 		ev,
 		authState,
