@@ -78,7 +78,7 @@ export function decodeMessageNode(
 
 		chatId = from
 		author = participant
-		} else if (isJidNewsLetter(from)) {
+		} else if(isJidNewsletter(from)){
 		msgType = 'newsletter'
 		author = from
 		chatId = from
@@ -86,14 +86,15 @@ export function decodeMessageNode(
 		throw new Boom('Unknown message type', { data: stanza })
 	}
 
-	const fromMe = isJidNewsLetter(from) ? !!stanza.attrs?.is_sender : (isLidUser(from) ? isMeLid : isMe)(stanza.attrs.participant || stanza.attrs.from)
-	const pushname = stanza.attrs.notify
+	const fromMe = isJidNewsletter(from) ? !!stanza.attrs?.is_sender || false : (isLidUser(from) ? isMeLid : isMe)(stanza.attrs.participant || stanza.attrs.from)
+	const pushname = stanza?.attrs?.notify
 
 	const key: WAMessageKey = {
 		remoteJid: chatId,
 		fromMe,
 		id: msgId,
-		participant
+		participant,
+		server_id: stanza.attrs?.server_id
 	}
 
 	const fullMessage: proto.IWebMessageInfo = {
@@ -162,7 +163,7 @@ export const decryptMessageNode = (
 						fullMessage.verifiedBizName = details.verifiedName
 					}
 
-					if(tag !== 'enc') {
+					if(tag !== 'enc' && tag !== 'plaintext') {
 						continue
 					}
 
@@ -193,12 +194,15 @@ export const decryptMessageNode = (
 								ciphertext: content
 							})
 							break
+						case undefined:
+							msgBuffer = content
+							break
 						default:
 							throw new Error(`Unknown e2e type: ${e2eType}`)
 						}
 
-						let msg: proto.IMessage = proto.Message.decode(unpadRandomMax16(msgBuffer))
-						msg = msg.deviceSentMessage?.message || msg
+						let msg: proto.IMessage = proto.Message.decode(tag === 'plaintext' ? msgBuffer : unpadRandomMax16(msgBuffer))
+						msg = msg?.deviceSentMessage?.message || msg
 
 						await processSenderKeyDistribution(msg)
 
