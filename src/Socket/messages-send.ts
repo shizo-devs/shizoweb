@@ -6,7 +6,7 @@ import { DEFAULT_CACHE_TTLS, WA_DEFAULT_EPHEMERAL } from '../Defaults'
 import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, SocketConfig, WAMediaUploadFunctionOpts, WAMessageKey } from '../Types'
 import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, parseAndInjectE2ESessions, unixTimestampSeconds } from '../Utils'
 import { getUrlInfo } from '../Utils/link-preview'
-import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, isJidNewsLetter, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
+import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, encodeNewsletterMessage, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, isJidNewsLetter, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
 import { makeNewsLetterSocket } from './newsletter'
 import ListType = proto.Message.ListMessage.ListType;
 import { Readable } from 'stream'
@@ -433,27 +433,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					})
 
 					await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
-					} else if (isNewsletter) {
-					// Message edit
-					if (message.protocolMessage?.editedMessage) {
-						msgId = message.protocolMessage.key?.id!
-						message = message.protocolMessage.editedMessage
-					}
-
-					// Message delete
-					if (message.protocolMessage?.type === proto.Message.ProtocolMessage.Type.REVOKE) {
-						msgId = message.protocolMessage.key?.id!
-						message = {}
-					}
-
+					} else if(isNewsletter){
 					const patched = await patchMessageBeforeSending(message, [])
-					const bytes = proto.Message.encode(patched).finish()
+					const bytes = encodeNewsletterMessage(patched)
 
 					binaryNodeContent.push({
 						tag: 'plaintext',
-						attrs: mediaType ? { mediatype: mediaType } : {},
+						attrs: {},
 						content: bytes
-					})
+					}) 
 				} else {
 					const { user: meUser, device: meDevice } = jidDecode(meId)!
 
