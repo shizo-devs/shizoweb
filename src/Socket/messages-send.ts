@@ -100,7 +100,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		if(type) {
-			node.attrs.type = isJidNewsLetter(jid) ? 'read-self' : type
+			node.attrs.type = isJidNewsletter(jid) ? 'read-self' : type
 		}
 
 		const remainingMessageIds = messageIds.slice(1)
@@ -776,7 +776,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 							},
 						),
 						upload: async(readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
-							const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewsLetter(jid) })
+							const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewsletter(jid) })
 							mediaHandle = up.handle
 							return up
 						},
@@ -792,13 +792,13 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				// required for delete
 				if(isDeleteMsg) {
 					// if the chat is a group, and I am not the author, then delete the message as an admin
-					if((isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) || isJidNewsLetter(jid)) {
+					if((isJidGroup(content.delete?.remoteJid as string) && !content.delete?.fromMe) || isJidNewsletter(jid)) {
 						additionalAttributes.edit = '8'
 					} else {
 						additionalAttributes.edit = '7'
 					}
 				} else if(isEditMsg) {
-					additionalAttributes.edit = isJidNewsLetter(jid) ? '3' : '1'
+					additionalAttributes.edit = isJidNewsletter(jid) ? '3' : '1'
 				}
 
 				if (mediaHandle) {
