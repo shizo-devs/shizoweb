@@ -661,34 +661,23 @@ export const getWAUploadToServer = (
 		let urls: { mediaUrl: string, directPath: string, handle?: string } | undefined
 		const hosts = [ ...customUploadHosts, ...uploadInfo.hosts ]
 
-		const chunks: Buffer[] | Buffer = []
-		if (!Buffer.isBuffer(stream)) {
-			for await (const chunk of stream) {
-				chunks.push(chunk)
-			}
-		}
-
-		const reqBody = Buffer.isBuffer(stream) ? stream : Buffer.concat(chunks)
 		fileEncSha256B64 = encodeBase64EncodedStringForUpload(fileEncSha256B64)
 		let media = MEDIA_PATH_MAP[mediaType]
 		if (newsletter) {
 			media = media?.replace('/mms/', '/newsletter/newsletter-')
 		}
 
-		for(const { hostname, maxContentLengthBytes } of hosts) {
+                 for(const { hostname } of hosts) {
 			logger.debug(`uploading to "${hostname}"`)
 
 			const auth = encodeURIComponent(uploadInfo.auth) // the auth token
 			const url = `https://${hostname}${media}/${fileEncSha256B64}?auth=${auth}&token=${fileEncSha256B64}`
 			let result: any
 			try {
-				if(maxContentLengthBytes && reqBody.length > maxContentLengthBytes) {
-					throw new Boom(`Body too large for "${hostname}"`, { statusCode: 413 })
-				}
-
+				
 				const body = await axios.post(
 					url,
-					reqBody,
+					stream,
 					{
 						...options,
 						headers: {
