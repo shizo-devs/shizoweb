@@ -10,6 +10,8 @@
 
 **• Kai**
 
+**• Gariox 3D**
+
 # Shizoweb - Typescript/Javascript WhatsApp Web API
 
 ### Important Note
