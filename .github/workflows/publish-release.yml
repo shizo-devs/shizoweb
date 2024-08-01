@@ -44,12 +44,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish in NPM (as `baileys`)
+      - name: Publish in NPM (as `shizoweb`)
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
-      - name: Publish in NPM (whiskeysockets scope)
+      - name: Publish in NPM (shizodevs scope)
         run: |
           npx json -I -f package.json -e "this.name='@shizodevs/shizoweb'"
           npm publish --access public --//registry.npmjs.org/:_authToken=$NPM_TOKEN
