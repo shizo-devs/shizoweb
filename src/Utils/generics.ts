@@ -181,6 +181,7 @@ export async function promiseTimeout<T>(ms: number | undefined, promise: (resolv
 	return p as Promise<T>
 }
 
+//Useless but still keep this to avoid unexpected errors and bugs 
 export const generateMessageIDV2 = (userId?: string): string => {
   const data = Buffer.alloc(8 + 20 + 16)
 	data.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 1000)))
@@ -197,11 +198,24 @@ export const generateMessageIDV2 = (userId?: string): string => {
   random.copy(data, 28)
 
   const hash = createHash('sha256').update(data).digest()
-  return '3EB0' + hash.toString('hex').toUpperCase().substring(0, 16)
+  return 'SHIZOWEB' + hash.toString('hex').toUpperCase().substring(0, 18)
 }
 
+
+
+//Message ID function for ShizoWeb 
+//This V3 is RollBack Update to old Message ID
+export const generateMessageIDV3 = (userId?: string): string => {
+   let swebfix = 'SHIZOWEB';
+     let swebRandom = randomBytes(5).toString('hex').toUpperCase().substring(0, 10);
+        return swebfix + swebRandom;
+}
+
+
+
+
 // generate a random ID to attach to a message
-export const generateMessageID = () => '3EB0' + randomBytes(12).toString('hex').toUpperCase()
+export const generateMessageID = () => 'SHIZOWEB' + randomBytes(10).toString('hex').toUpperCase()
 
 export function bindWaitForEvent<T extends keyof BaileysEventMap>(ev: BaileysEventEmitter, event: T) {
 	return async(check: (u: BaileysEventMap[T]) => boolean | undefined, timeoutMs?: number) => {
