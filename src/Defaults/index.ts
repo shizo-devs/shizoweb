@@ -66,6 +66,7 @@ export const DEFAULT_CONNECTION_CONFIG: SocketConfig = {
 	retryRequestDelayMs: 250,
 	maxMsgRetryCount: 5,
 	fireInitQueries: true,
+	ignoreMsgLoading: false,
 	auth: undefined as unknown as AuthenticationState,
 	markOnlineOnConnect: true,
 	syncFullHistory: false,
