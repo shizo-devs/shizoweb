@@ -4,6 +4,7 @@ import type { BufferedEventData } from './Events'
 import type { ChatLabelAssociationActionBody } from './LabelAssociation'
 import type { MessageLabelAssociationActionBody } from './LabelAssociation'
 import type { MinimalMessage } from './Message'
+import type { LabelActionBody } from './Label'
 
 /** privacy settings in WhatsApp Web */
 export type WAPrivacyValue = 'all' | 'contacts' | 'contact_blacklist' | 'none'
@@ -88,6 +89,8 @@ export type ChatModification =
         lastMessages: LastMessageList
     }
     | { delete: true, lastMessages: LastMessageList }
+    // Label 🏷️
+    | { addLabel: LabelActionBody }
     // Label assosiation
     | { addChatLabel: ChatLabelAssociationActionBody }
     | { removeChatLabel: ChatLabelAssociationActionBody }
