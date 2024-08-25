@@ -14,6 +14,10 @@
 
 # Shizoweb - Typescript/Javascript WhatsApp Web API
 
+## Thanka To
+**• Whiskeysockets** as most of features are copied from their Repository.
+
+
 ### Important Note
 
 This library was originally a project for **CS-2362 at Ashoka University** and is in no way affiliated with or endorsed by WhatsApp. Use at your own discretion. Do not spam people with this. We discourage any stalkerware, bulk or automated messaging usage. 
